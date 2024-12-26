@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private Button settingsButton;
     private TextView titleBar;
     private ConstraintLayout mainLayout;
+    private Spinner wheelDropdown;
     private List<String> options = new ArrayList<>();
     private SharedPreferences sharedPreferences;
     private boolean wheelIsSpinning = false;
@@ -63,8 +64,21 @@ public class MainActivity extends AppCompatActivity {
         updateTitle();
         updateBackground();
         checkAnimationsEnabled();
+        prepareWheelDropdown();
 
     }
+    private void prepareWheelDropdown(){
+        //get the spinner from the xml.
+        wheelDropdown = findViewById(R.id.spinner1);
+        //create a list of items for the spinner.
+        String[] items = new String[]{"1", "2", "three"};
+        //create an adapter to describe how the items are displayed, adapters are used in several places in android.
+        //There are multiple variations of this, but this is the basic variant.
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, items);
+        //set the spinners adapter to the previously created one.
+        wheelDropdown.setAdapter(adapter);
+    }
+    
     private void checkAnimationsEnabled() {
         boolean animationsEnabled = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1) != 0;
         if (!animationsEnabled) {
