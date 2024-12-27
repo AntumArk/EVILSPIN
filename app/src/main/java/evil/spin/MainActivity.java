@@ -15,8 +15,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -25,10 +23,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
+
+import org.json.JSONException;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 
@@ -43,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     public DrawerLayout drawerLayout;
     public ActionBarDrawerToggle actionBarDrawerToggle;
     private List<String> options = new ArrayList<>();
+    private Collection<Wheel> Wheels = new ArrayList<Wheel>();
+    private IWheelSerializer wheelSerializer = new WheelSerializer();
     private SharedPreferences sharedPreferences;
     private boolean wheelIsSpinning = false;
 
@@ -75,6 +79,12 @@ public class MainActivity extends AppCompatActivity {
         checkAnimationsEnabled();
 
         prepareWheelMenu();
+        saveWheels();
+        try {
+            loadWheels();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void prepareWheelMenu() {
@@ -238,5 +248,24 @@ public class MainActivity extends AppCompatActivity {
         Set<String> savedOptions = sharedPreferences.getStringSet("wheel_options", new HashSet<>());
         options = new ArrayList<>(savedOptions);
         wheelView.setOptions(options);
+    }
+    private void saveWheels(){
+
+        List<String> fakeoptions =  Arrays.asList("a","b");
+        Wheel wheel = new Wheel("Hello",fakeoptions);
+        Wheels.add(wheel);
+        wheel.Name="ni";
+        Wheels.add(wheel);
+        String json=wheel.Serialize();
+        try {
+            wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
+
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void loadWheels() throws JSONException {
+        List<Wheel> loadedWheels=new ArrayList<>();
+        loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
     }
 }
