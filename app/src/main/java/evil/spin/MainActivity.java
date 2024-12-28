@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -43,12 +44,17 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import kotlin.NotImplementedError;
+
 public class MainActivity extends AppCompatActivity {
     private WheelView wheelView;
     private Button spinButton;
     private EditText optionInput;
     private Button addOptionButton;
     private Button settingsButton;
+    private Button saveButton;
+    private Button addWheelButton;
+    private Button deleteWheelButton;
     private TextView titleBar;
     private DrawerLayout mainLayout;
     private DrawerLayout drawerLayout;
@@ -78,16 +84,21 @@ public class MainActivity extends AppCompatActivity {
         settingsButton = findViewById(R.id.settingsButton);
         titleBar = findViewById(R.id.titlebar);
         mainLayout = findViewById(R.id.activity_main);
+        setUpSettingsButtons();
         setUpSideMenu();
 
-        //saveWheels();
         try {
             loadWheels();
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
         prepareWheelMenu();
-        CurrentWheel = Wheels.iterator().next();
+
+        if (Wheels.isEmpty())
+            addWheel();
+        else
+            CurrentWheel = Wheels.iterator().next();
+
         loadOptions(CurrentWheel);
 
         addOptionButton.setOnClickListener(v -> addOption());
@@ -99,12 +110,21 @@ public class MainActivity extends AppCompatActivity {
         updateTitle(CurrentWheel);
         updateBackground();
         checkAnimationsEnabled();
+    }
 
+    private void setUpSettingsButtons() {
+        saveButton = findViewById(R.id.btn_save);
+        deleteWheelButton = findViewById(R.id.btn_delete);
+        addWheelButton = findViewById(R.id.btn_add_wheel);
 
+        saveButton.setOnClickListener(v->saveWheels());
+        deleteWheelButton.setOnClickListener(v->deleteWheel());
+        addWheelButton.setOnClickListener(v->addWheel());
     }
 
     private void setUpSideMenu() {
         navigationView = findViewById(R.id.navigationView);
+
         wheelMenu = navigationView.getMenu();
 
         actionBarDrawerToggle = new ActionBarDrawerToggle(this, mainLayout, R.string.nav_open, R.string.nav_close);
@@ -129,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
     private void prepareWheelMenu() {
         // Clean menu from previous wheels
         wheelMenu.clear();
-        FakeWheels(); // TODO remove after testing
+       // FakeWheels(); // TODO remove after testing
         // Create a separate method for the menu item click listener
         MenuItem.OnMenuItemClickListener menuItemClicked = createMenuItemClickListener();
 
@@ -236,8 +256,8 @@ public class MainActivity extends AppCompatActivity {
     private void addOption() {
         String option = optionInput.getText().toString().trim();
         if (!option.isEmpty()) {
-            options.add(option);
-            wheelView.setOptions(options);
+            CurrentWheel.Options.add(option);
+            wheelView.setOptions((List<String>) CurrentWheel.Options);
             optionInput.setText("");
             saveOptions();
         }
@@ -330,9 +350,32 @@ public class MainActivity extends AppCompatActivity {
     {
         wheelView.setOptions((List<String>) wheel.Options);
     }
+    private void updateWheel(Wheel wheel)
+    {
+        loadOptions(wheel);
+        updateTitle(wheel);
+    }
     private void saveWheels(){
-
         try {
+            if(Wheels.parallelStream().anyMatch(wheel -> wheel.Name.equals(CurrentWheel.Name)))
+            {
+                new AlertDialog.Builder(this)
+                        .setTitle("Same title found")
+                        .setMessage("Overwrite?")
+                        .setPositiveButton("OK", (dialog, which) -> {
+                            try {
+                                Wheel wheelToOverWrite = findWheelByName(Wheels,CurrentWheel.Name);
+                                wheelToOverWrite.Options = CurrentWheel.Options;
+                                CurrentWheel = wheelToOverWrite;
+                                wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .show();
+                return;
+            }
+            Wheels.add(CurrentWheel);
             wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
 
         } catch (JSONException e) {
@@ -353,5 +396,23 @@ public class MainActivity extends AppCompatActivity {
     private void loadWheels() throws JSONException {
         List<Wheel> loadedWheels=new ArrayList<>();
         loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
+    }
+
+    private void addWheel() {
+        CurrentWheel=new Wheel();
+        updateWheel(CurrentWheel);
+    }
+
+    private void deleteWheel() {
+        if(Wheels.contains(CurrentWheel)) {
+            Wheels.remove(CurrentWheel);
+
+            try {
+                wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        addWheel();
     }
 }
