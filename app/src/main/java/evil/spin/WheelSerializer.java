@@ -45,7 +45,7 @@ public class WheelSerializer implements IWheelSerializer {
 
     @Override
     public Collection<Wheel> DeserializeWheels(String json) throws JSONException {
-
+        if(json.isEmpty()) return new ArrayList<>();
         JSONObject wheelsJson = new JSONObject(json);
 
         JSONArray wheelsJsonArray = wheelsJson.getJSONArray(SharedPreferencesWheelsKey);

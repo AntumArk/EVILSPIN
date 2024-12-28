@@ -9,20 +9,26 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.menu.ActionMenuItem;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
+
+import com.google.android.material.navigation.NavigationView;
 
 import org.json.JSONException;
 
@@ -31,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 
@@ -41,9 +48,12 @@ public class MainActivity extends AppCompatActivity {
     private Button addOptionButton;
     private Button settingsButton;
     private TextView titleBar;
-    private ConstraintLayout mainLayout;
-    public DrawerLayout drawerLayout;
-    public ActionBarDrawerToggle actionBarDrawerToggle;
+    private DrawerLayout mainLayout;
+    private DrawerLayout drawerLayout;
+    private ActionBarDrawerToggle actionBarDrawerToggle;
+    private NavigationView navigationView;
+    private Menu wheelMenu;
+    public androidx.appcompat.widget.Toolbar toolbar;
     private List<String> options = new ArrayList<>();
     private Collection<Wheel> Wheels = new ArrayList<Wheel>();
     private IWheelSerializer wheelSerializer = new WheelSerializer();
@@ -66,6 +76,19 @@ public class MainActivity extends AppCompatActivity {
         settingsButton = findViewById(R.id.settingsButton);
         titleBar = findViewById(R.id.titlebar);
         mainLayout = findViewById(R.id.activity_main);
+        navigationView = findViewById(R.id.navigationView);
+        wheelMenu = navigationView.getMenu();
+
+        toolbar = findViewById(R.id.toolbar);
+        this.setSupportActionBar(toolbar);
+
+        actionBarDrawerToggle = new ActionBarDrawerToggle(this, mainLayout, R.string.nav_open, R.string.nav_close);
+        mainLayout.addDrawerListener(actionBarDrawerToggle);
+        actionBarDrawerToggle.syncState();
+
+        // Enable the home button to show the drawer toggle
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
 
         addOptionButton.setOnClickListener(v -> addOption());
         spinButton.setOnClickListener(v -> spinWheel());
@@ -78,42 +101,62 @@ public class MainActivity extends AppCompatActivity {
         updateBackground();
         checkAnimationsEnabled();
 
-        prepareWheelMenu();
-        saveWheels();
+        //saveWheels();
         try {
             loadWheels();
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
+        prepareWheelMenu();
+        navigationView.setNavigationItemSelectedListener(v->stuff());
     }
 
+    private boolean stuff() {
+        return true;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        this.wheelMenu = menu;
+        getMenuInflater().inflate(R.menu.wheel_menu, menu);
+        return true;
+    }
     private void prepareWheelMenu() {
+        // Clean menu from previous wheels
+        wheelMenu.clear();
+        FakeWheels(); // TODO remove after testing
+        MenuItem.OnMenuItemClickListener menuItemClicked = new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(@NonNull MenuItem menuItem) {
+                // Handle menu item click here
+                Toast.makeText(MainActivity.this, menuItem.getTitle() + " clicked", Toast.LENGTH_SHORT).show();
+                return true;
+            }
+        };
+        for (Wheel wheel : Wheels) {
+            wheelMenu.add(wheel.Name).setOnMenuItemClickListener(menuItemClicked);
+        }
+        //mainLayout.setAct
         // drawer layout instance to toggle the menu icon to open
         // drawer and back button to close drawer
-        drawerLayout = findViewById(R.id.my_drawer_layout);
-        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.nav_open, R.string.nav_close);
-
-        // pass the Open and Close toggle for the drawer layout listener
-        // to toggle the button
-        drawerLayout.addDrawerListener(actionBarDrawerToggle);
-        actionBarDrawerToggle.syncState();
+//        drawerLayout = findViewById(R.id.activity_main);
+//        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.nav_open, R.string.nav_close);
+//
+//        // pass the Open and Close toggle for the drawer layout listener
+//        // to toggle the button
+//        drawerLayout.addDrawerListener(actionBarDrawerToggle);
+//        actionBarDrawerToggle.syncState();
 
         // to make the Navigation drawer icon always appear on the action bar
-        //Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
     // override the onOptionsItemSelected()
     // function to implement
     // the item click listener callback
     // to open and close the navigation
     // drawer when the icon is clicked
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
-        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
     private void checkAnimationsEnabled() {
         boolean animationsEnabled = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1) != 0;
         if (!animationsEnabled) {
@@ -251,12 +294,6 @@ public class MainActivity extends AppCompatActivity {
     }
     private void saveWheels(){
 
-        List<String> fakeoptions =  Arrays.asList("a","b");
-        Wheel wheel = new Wheel("Hello",fakeoptions);
-        Wheels.add(wheel);
-        wheel.Name="ni";
-        Wheels.add(wheel);
-        String json=wheel.Serialize();
         try {
             wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
 
@@ -264,6 +301,17 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
     }
+
+    private void FakeWheels() {
+        List<String> fakeoptions =  Arrays.asList("a","b");
+        Wheel wheel = new Wheel("Hello",fakeoptions);
+        Wheels.add(wheel);
+        Wheel wheel2 = new Wheel("ni",fakeoptions);
+        Wheels.add(wheel);
+        Wheels.add(wheel2);
+        String json=wheel.Serialize();
+    }
+
     private void loadWheels() throws JSONException {
         List<Wheel> loadedWheels=new ArrayList<>();
         loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
