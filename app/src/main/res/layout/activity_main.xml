@@ -10,15 +10,6 @@
     >
 
 
-        <!-- this the navigation view which draws and shows the navigation drawer -->
-        <!-- include the menu created in the menu folder -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-         />
-
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"

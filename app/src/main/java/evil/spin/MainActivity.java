@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
     private ActionBarDrawerToggle actionBarDrawerToggle;
     private NavigationView navigationView;
     private Menu wheelMenu;
-    public androidx.appcompat.widget.Toolbar toolbar;
     private List<String> options = new ArrayList<>();
     private Collection<Wheel> Wheels = new ArrayList<Wheel>();
     private IWheelSerializer wheelSerializer = new WheelSerializer();
@@ -79,15 +78,17 @@ public class MainActivity extends AppCompatActivity {
         navigationView = findViewById(R.id.navigationView);
         wheelMenu = navigationView.getMenu();
 
-        toolbar = findViewById(R.id.toolbar);
-        this.setSupportActionBar(toolbar);
 
         actionBarDrawerToggle = new ActionBarDrawerToggle(this, mainLayout, R.string.nav_open, R.string.nav_close);
         mainLayout.addDrawerListener(actionBarDrawerToggle);
         actionBarDrawerToggle.syncState();
 
         // Enable the home button to show the drawer toggle
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+        }
+
 
 
         addOptionButton.setOnClickListener(v -> addOption());
@@ -126,7 +127,16 @@ public class MainActivity extends AppCompatActivity {
         // Clean menu from previous wheels
         wheelMenu.clear();
         FakeWheels(); // TODO remove after testing
-        MenuItem.OnMenuItemClickListener menuItemClicked = new MenuItem.OnMenuItemClickListener() {
+        // Create a separate method for the menu item click listener
+        MenuItem.OnMenuItemClickListener menuItemClicked = createMenuItemClickListener();
+
+        for (Wheel wheel : Wheels) {
+            wheelMenu.add(wheel.Name).setOnMenuItemClickListener(menuItemClicked);
+        }
+
+    }
+    private MenuItem.OnMenuItemClickListener createMenuItemClickListener() {
+        return new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(@NonNull MenuItem menuItem) {
                 // Handle menu item click here
@@ -134,29 +144,14 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         };
-        for (Wheel wheel : Wheels) {
-            wheelMenu.add(wheel.Name).setOnMenuItemClickListener(menuItemClicked);
-        }
-        //mainLayout.setAct
-        // drawer layout instance to toggle the menu icon to open
-        // drawer and back button to close drawer
-//        drawerLayout = findViewById(R.id.activity_main);
-//        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.nav_open, R.string.nav_close);
-//
-//        // pass the Open and Close toggle for the drawer layout listener
-//        // to toggle the button
-//        drawerLayout.addDrawerListener(actionBarDrawerToggle);
-//        actionBarDrawerToggle.syncState();
-
-        // to make the Navigation drawer icon always appear on the action bar
-        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
-    // override the onOptionsItemSelected()
-    // function to implement
-    // the item click listener callback
-    // to open and close the navigation
-    // drawer when the icon is clicked
-
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (actionBarDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
     private void checkAnimationsEnabled() {
         boolean animationsEnabled = Settings.Global.getFloat(getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1) != 0;
         if (!animationsEnabled) {
