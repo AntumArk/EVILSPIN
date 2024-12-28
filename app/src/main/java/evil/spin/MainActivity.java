@@ -20,6 +20,7 @@ import android.widget.Toast;
 import android.widget.Toolbar;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private WheelView wheelView;
@@ -54,8 +56,9 @@ public class MainActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private Menu wheelMenu;
     private List<String> options = new ArrayList<>();
-    private Collection<Wheel> Wheels = new ArrayList<Wheel>();
-    private IWheelSerializer wheelSerializer = new WheelSerializer();
+    private List<Wheel> Wheels = new ArrayList<Wheel>();
+    private Wheel CurrentWheel;
+    private final IWheelSerializer wheelSerializer = new WheelSerializer();
     private SharedPreferences sharedPreferences;
     private boolean wheelIsSpinning = false;
 
@@ -75,9 +78,34 @@ public class MainActivity extends AppCompatActivity {
         settingsButton = findViewById(R.id.settingsButton);
         titleBar = findViewById(R.id.titlebar);
         mainLayout = findViewById(R.id.activity_main);
+        setUpSideMenu();
+
+        //saveWheels();
+        try {
+            loadWheels();
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        prepareWheelMenu();
+        CurrentWheel = Wheels.iterator().next();
+        loadOptions(CurrentWheel);
+
+        addOptionButton.setOnClickListener(v -> addOption());
+        spinButton.setOnClickListener(v -> spinWheel());
+        settingsButton.setOnClickListener(v -> openSettings());
+        RainbowBorderButtonDrawable rainbowDrawable = new RainbowBorderButtonDrawable(this);
+        spinButton.setBackground(rainbowDrawable);
+        updateWheelAppearance();
+        updateTitle(CurrentWheel);
+        updateBackground();
+        checkAnimationsEnabled();
+
+
+    }
+
+    private void setUpSideMenu() {
         navigationView = findViewById(R.id.navigationView);
         wheelMenu = navigationView.getMenu();
-
 
         actionBarDrawerToggle = new ActionBarDrawerToggle(this, mainLayout, R.string.nav_open, R.string.nav_close);
         mainLayout.addDrawerListener(actionBarDrawerToggle);
@@ -88,33 +116,8 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setHomeButtonEnabled(true);
         }
-
-
-
-        addOptionButton.setOnClickListener(v -> addOption());
-        spinButton.setOnClickListener(v -> spinWheel());
-        settingsButton.setOnClickListener(v -> openSettings());
-        RainbowBorderButtonDrawable rainbowDrawable = new RainbowBorderButtonDrawable(this);
-        spinButton.setBackground(rainbowDrawable);
-        loadOptions();
-        updateWheelAppearance();
-        updateTitle();
-        updateBackground();
-        checkAnimationsEnabled();
-
-        //saveWheels();
-        try {
-            loadWheels();
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-        prepareWheelMenu();
-        navigationView.setNavigationItemSelectedListener(v->stuff());
     }
 
-    private boolean stuff() {
-        return true;
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -140,10 +143,43 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onMenuItemClick(@NonNull MenuItem menuItem) {
                 // Handle menu item click here
-                Toast.makeText(MainActivity.this, menuItem.getTitle() + " clicked", Toast.LENGTH_SHORT).show();
+                String wheelName = (String) menuItem.getTitle();
+                Toast.makeText(MainActivity.this, wheelName + " clicked", Toast.LENGTH_SHORT).show();
+                try {
+                    CurrentWheel = findWheelByName(Wheels,(String) wheelName);
+                    loadOptions(CurrentWheel);
+                    updateTitle(CurrentWheel);
+                    // Do something with the found wheel
+                    Toast.makeText(MainActivity.this, "Found wheel: " + CurrentWheel.Name, Toast.LENGTH_SHORT).show();
+
+                } catch (Exception e) {
+                    // Handle the exception
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+
                 return true;
             }
         };
+    }
+
+
+    // Method to find a wheel by name
+    public Wheel findWheelByName(List<Wheel> wheels, String name) throws Exception {
+        // Filter wheels with the matching name
+        List<Wheel> matchingWheels = wheels.parallelStream()
+                .filter(wheel -> wheel.Name.equals(name))
+                .collect(Collectors.toList());
+
+        // Throw exception if no matching wheels or more than one matching wheel is found
+        if (matchingWheels.isEmpty()) {
+            throw new Exception("No wheel found with the name: " + name);
+        } else if (matchingWheels.size() > 1) {
+            throw new Exception("Multiple wheels found with the name: " + name);
+        }
+
+        // Return the single matching wheel
+        return matchingWheels.get(0);
     }
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -173,7 +209,10 @@ public class MainActivity extends AppCompatActivity {
         String title = sharedPreferences.getString("wheel_title", "Spin the Wheel");
         titleBar.setText(title);
     }
-
+    private void updateTitle(Wheel wheel) {
+        titleBar.setText(wheel.Name);
+        titleBar.refreshDrawableState();
+    }
     private void updateBackground() {
         String background = sharedPreferences.getString("background", "red");
         setBackgroundByName(background);
@@ -287,6 +326,10 @@ public class MainActivity extends AppCompatActivity {
         options = new ArrayList<>(savedOptions);
         wheelView.setOptions(options);
     }
+    private void loadOptions(Wheel wheel)
+    {
+        wheelView.setOptions((List<String>) wheel.Options);
+    }
     private void saveWheels(){
 
         try {
@@ -298,11 +341,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void FakeWheels() {
-        List<String> fakeoptions =  Arrays.asList("a","b");
+        List<String> fakeoptions =  Arrays.asList("a","b","c");
+        List<String> fakeoptions2 =  Arrays.asList("aa","ba","ca");
         Wheel wheel = new Wheel("Hello",fakeoptions);
         Wheels.add(wheel);
-        Wheel wheel2 = new Wheel("ni",fakeoptions);
-        Wheels.add(wheel);
+        Wheel wheel2 = new Wheel("ni",fakeoptions2);
         Wheels.add(wheel2);
         String json=wheel.Serialize();
     }
