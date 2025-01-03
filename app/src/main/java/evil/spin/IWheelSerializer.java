@@ -24,7 +24,7 @@ public interface IWheelSerializer {
     List<Wheel> getWheelsFromJsonArray(JSONArray wheelsJsonArray) throws JSONException;
 
     @NonNull
-    Wheel getWheelFromJson(JSONObject wheelJson) throws JSONException;
+    Wheel getWheelFromJson(String wheelJson) throws JSONException;
 
     String[] toStringArray(JSONArray array);
 }

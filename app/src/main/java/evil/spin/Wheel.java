@@ -5,24 +5,28 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-import kotlin.NotImplementedError;
-
 public class Wheel implements Serializable {
+    public long Id = 0;
     public String Name = "";
     public Collection<String> Options = Collections.emptyList();
-    public Wheel(String name, Collection<String> options)
+
+    public Wheel(long id, String name, Collection<String> options)
     {
+        Id = id;
         Name = name;
         Options = options;
     }
     public Wheel() {}
+
     public String Serialize()
     {
         JSONObject json = new JSONObject();
         try {
+            json.put("Id",Id);
             json.put("Name",Name);
             JSONArray options = new JSONArray(Options);
             json.put("Options",options);
@@ -31,5 +35,4 @@ public class Wheel implements Serializable {
         }
         return json.toString();
     }
-
 }

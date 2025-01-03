@@ -9,7 +9,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -59,7 +58,7 @@ public class WheelSerializer implements IWheelSerializer {
         for(int i = 0; i< wheelsJsonArray.length(); i++)
         {
             JSONObject wheelJson = wheelsJsonArray.getJSONObject(i);
-            Wheel wheel = getWheelFromJson(wheelJson);
+            Wheel wheel = getWheelFromJson(wheelJson.toString());
             wheels.add(wheel);
         }
         return wheels;
@@ -67,10 +66,20 @@ public class WheelSerializer implements IWheelSerializer {
 
     @NonNull
     @Override
-    public Wheel getWheelFromJson(JSONObject wheelJson) throws JSONException {
-        String[] options = toStringArray(wheelJson.getJSONArray("Options"));
-        String wheelName = wheelJson.getString("Name");
-        return new Wheel(wheelName, Arrays.asList(options));
+    public Wheel getWheelFromJson(String wheelJson) throws JSONException {
+        if (wheelJson.isEmpty()) throw new JSONException("Empty Json");
+
+        JSONObject jsonObject = new JSONObject(wheelJson);
+        long id = jsonObject.getLong("Id");
+        String name = jsonObject.getString("Name");
+
+        JSONArray optionsArray = jsonObject.getJSONArray("Options");
+        Collection<String> options = new ArrayList<>();
+        for (int i = 0; i < optionsArray.length(); i++) {
+            options.add(optionsArray.getString(i));
+        }
+
+        return new Wheel(id, name, options);
     }
 
     @Override
