@@ -12,41 +12,44 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/screen_red">
+
             <EditText
                 android:id="@+id/titlebar"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_marginBottom="1dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:fontFamily="monospace"
                 android:gravity="center"
+                android:hint="Wheel Title"
+                android:inputType="text"
+                android:minWidth="150dp"
+                android:minHeight="32dp"
                 android:padding="10dp"
                 android:text="Title"
-                android:hint="Wheel Title"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 app:autoSizeMaxTextSize="30sp"
                 app:autoSizeMinTextSize="10sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHeight_percent="0.067"
-                app:layout_constraintStart_toStartOf="@id/settingsButtonLayout"
-                app:layout_constraintTop_toBottomOf="@id/settingsButtonLayout"
-                android:inputType="text"/>
+                app:layout_constraintBottom_toTopOf="@id/spinButton"
+                app:layout_constraintEnd_toStartOf="@id/settingsButtonLayout"
+                app:layout_constraintStart_toEndOf="@id/wheelView"
+                app:layout_constraintTop_toTopOf="parent" />
 
 
             <LinearLayout
                 android:id="@+id/settingsButtonLayout"
                 style="?android:attr/buttonBarStyle"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="0dp"
                 android:layout_marginEnd="0dp"
                 android:gravity="end"
-                android:orientation="horizontal"
-                android:padding="8dp"
+                android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/addOptionButton">
 
                 <!-- Delete Button -->
                 <com.google.android.material.button.MaterialButton
@@ -76,40 +79,45 @@
 
             <evil.spin.WheelView
                 android:id="@+id/wheelView"
-                android:minWidth="200dp"
-                android:minHeight="200dp"
                 android:layout_width="370dp"
                 android:layout_height="370dp"
-                app:layout_constraintTop_toBottomOf="@id/titlebar"
-                app:layout_constraintBottom_toTopOf="@id/spinButton"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:minWidth="200dp"
+                android:minHeight="200dp"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/spinButton"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/spin"
+                android:layout_marginStart="32dp"
                 android:background="@drawable/normal_buttom_pres"
+                android:text="@string/spin"
+                android:textColor="#FFFFFF"
                 app:backgroundTint="@null"
                 app:cornerRadius="8dp"
-                android:textColor="#FFFFFF"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/optionInput"
-                android:layout_marginBottom="16dp" />
+                app:layout_constraintBottom_toTopOf="@+id/optionInput"
+                app:layout_constraintEnd_toEndOf="@id/optionInput"
+                app:layout_constraintStart_toEndOf="@id/wheelView"
+                app:layout_constraintTop_toTopOf="@id/wheelView" />
 
             <EditText
                 android:id="@+id/optionInput"
-                android:layout_width="250dp"
+                android:layout_width="wrap_content"
+                android:minWidth="180dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
                 android:hint="@string/it_was_faked"
                 android:inputType="text"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/addOptionButton"
-                android:layout_margin="16dp" />
+                app:layout_constraintStart_toEndOf="@id/wheelView" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/addOptionButton"

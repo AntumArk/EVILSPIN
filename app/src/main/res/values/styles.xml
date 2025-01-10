@@ -11,7 +11,7 @@
 
         <item name="iconGravity">textStart</item>
         <item name="iconPadding">0dp</item>
-        <item name="iconSize">60dp</item>
+        <item name="iconSize">50dp</item>
         <item name="iconTint">#FFFFFF</item>
         <item name="cornerRadius">8dp</item>
         <item name="backgroundTint">#0072847E</item>
