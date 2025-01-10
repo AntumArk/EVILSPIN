@@ -34,13 +34,10 @@ public class WheelDB {
         AddWheel(new Wheel(GetNewId(),name,options));
     }
 
-    public WheelDBResult AddWheel(Wheel wheelToAdd)
+    public void AddWheel(Wheel wheelToAdd)
     {
-        if(Wheels.parallelStream().anyMatch(wheel -> wheel.Id == wheelToAdd.Id))
-            return WheelDBResult.ERROR;
-
+        wheelToAdd.Id=GetNewId();
         Wheels.add(wheelToAdd);
-        return WheelDBResult.OK;
     }
     public Wheel getWheelById(int id) throws Exception {
         // Filter wheels with the matching name

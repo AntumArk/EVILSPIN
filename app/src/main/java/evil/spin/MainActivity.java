@@ -341,9 +341,7 @@ public class MainActivity extends AppCompatActivity {
         List<Wheel> wheels = wheelDB.getWheels();
         if(!wheels.contains(CurrentWheel))
             {
-                WheelDBResult result = wheelDB.AddWheel(CurrentWheel);
-                if (result == WheelDBResult.ERROR)
-                    throw new RuntimeException("Failed to add wheel to DB");
+                wheelDB.AddWheel(CurrentWheel);
             }
         wheelSerializer.SaveWheelsToSharedPreferences(wheels, sharedPreferences);
 

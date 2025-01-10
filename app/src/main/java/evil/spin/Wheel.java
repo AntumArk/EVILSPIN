@@ -12,7 +12,7 @@ import java.util.Collections;
 public class Wheel implements Serializable {
     public int Id = 0;
     public String Name = "";
-    public Collection<String> Options = Collections.emptyList();
+    public Collection<String> Options = new ArrayList<>();
 
     public Wheel(int id, String name, Collection<String> options)
     {
