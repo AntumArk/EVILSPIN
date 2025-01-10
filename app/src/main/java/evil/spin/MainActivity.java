@@ -79,6 +79,13 @@ public class MainActivity extends AppCompatActivity {
         try {
             loadWheels();
         } catch (JSONException e) {
+            Toast.makeText(mainLayout.getContext(),"Wheels settings malformed, making hard-reset",Toast.LENGTH_SHORT).show();
+            try {
+                wheelSerializer.SaveWheelsToSharedPreferences(wheelDB.getWheels(),sharedPreferences);
+                loadWheels();
+            } catch (JSONException ex) {
+                throw new RuntimeException(ex);
+            }
             throw new RuntimeException(e);
         }
         prepareWheelMenu();
