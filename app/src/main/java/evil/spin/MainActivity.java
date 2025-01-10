@@ -210,18 +210,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        updateTitle();
         updateBackground();
     }
 
-    private void updateTitle() {
-        String title = sharedPreferences.getString("wheel_title", "Spin the Wheel");
-        titleBar.setText(title);
-    }
     private void updateTitle(Wheel wheel) {
         titleBar.setText(wheel.Name);
         titleBar.refreshDrawableState();
     }
+
     private void updateBackground() {
         String background = sharedPreferences.getString("background", "red");
         setBackgroundByName(background);
