@@ -10,11 +10,11 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class Wheel implements Serializable {
-    public long Id = 0;
+    public int Id = 0;
     public String Name = "";
     public Collection<String> Options = Collections.emptyList();
 
-    public Wheel(long id, String name, Collection<String> options)
+    public Wheel(int id, String name, Collection<String> options)
     {
         Id = id;
         Name = name;

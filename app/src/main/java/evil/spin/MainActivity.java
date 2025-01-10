@@ -4,13 +4,12 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.inputmethod.InputMethodManager;
@@ -18,15 +17,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.view.menu.ActionMenuItem;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.preference.PreferenceManager;
 
@@ -36,15 +31,10 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import kotlin.NotImplementedError;
 
 public class MainActivity extends AppCompatActivity {
     private WheelView wheelView;
@@ -55,16 +45,16 @@ public class MainActivity extends AppCompatActivity {
     private Button saveButton;
     private Button addWheelButton;
     private Button deleteWheelButton;
-    private TextView titleBar;
+    private EditText titleBar;
     private DrawerLayout mainLayout;
     private DrawerLayout drawerLayout;
     private ActionBarDrawerToggle actionBarDrawerToggle;
     private NavigationView navigationView;
     private Menu wheelMenu;
     private List<String> options = new ArrayList<>();
-    private List<Wheel> Wheels = new ArrayList<Wheel>();
     private Wheel CurrentWheel;
     private final IWheelSerializer wheelSerializer = new WheelSerializer();
+    public WheelDB wheelDB = new WheelDB();
     private SharedPreferences sharedPreferences;
     private boolean wheelIsSpinning = false;
 
@@ -94,12 +84,7 @@ public class MainActivity extends AppCompatActivity {
         }
         prepareWheelMenu();
 
-        if (Wheels.isEmpty())
-            addWheel();
-        else
-            CurrentWheel = Wheels.iterator().next();
-
-        loadOptions(CurrentWheel);
+        LoadCurrentWheel();
 
         addOptionButton.setOnClickListener(v -> addOption());
         spinButton.setOnClickListener(v -> spinWheel());
@@ -107,9 +92,16 @@ public class MainActivity extends AppCompatActivity {
         RainbowBorderButtonDrawable rainbowDrawable = new RainbowBorderButtonDrawable(this);
         spinButton.setBackground(rainbowDrawable);
         updateWheelAppearance();
-        updateTitle(CurrentWheel);
         updateBackground();
         checkAnimationsEnabled();
+    }
+
+    private void LoadCurrentWheel() {
+        if (wheelDB.IsEmpty())
+            addWheel();
+        else
+            CurrentWheel = wheelDB.GetFirst();
+        updateWheel(CurrentWheel);
     }
 
     private void setUpSettingsButtons() {
@@ -117,7 +109,13 @@ public class MainActivity extends AppCompatActivity {
         deleteWheelButton = findViewById(R.id.btn_delete);
         addWheelButton = findViewById(R.id.btn_add_wheel);
 
-        saveButton.setOnClickListener(v->saveWheels());
+        saveButton.setOnClickListener(v-> {
+            try {
+                saveWheels();
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        });
         deleteWheelButton.setOnClickListener(v->deleteWheel());
         addWheelButton.setOnClickListener(v->addWheel());
     }
@@ -152,54 +150,45 @@ public class MainActivity extends AppCompatActivity {
        // FakeWheels(); // TODO remove after testing
         // Create a separate method for the menu item click listener
         MenuItem.OnMenuItemClickListener menuItemClicked = createMenuItemClickListener();
-
-        for (Wheel wheel : Wheels) {
-            wheelMenu.add(wheel.Name).setOnMenuItemClickListener(menuItemClicked);
+        List<Wheel> wheels=wheelDB.getWheels();
+        for (Wheel wheel : wheels) {
+            wheelMenu.add(Menu.NONE, wheel.Id,Menu.NONE,wheel.Id+": "+ wheel.Name).setOnMenuItemClickListener(menuItemClicked);
+            addMenuSeparator(wheelMenu);
         }
 
+        // Update navigation view
+        navigationView.invalidate();
     }
     private MenuItem.OnMenuItemClickListener createMenuItemClickListener() {
-        return new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(@NonNull MenuItem menuItem) {
-                // Handle menu item click here
-                String wheelName = (String) menuItem.getTitle();
-                Toast.makeText(MainActivity.this, wheelName + " clicked", Toast.LENGTH_SHORT).show();
-                try {
-                    CurrentWheel = findWheelByName(Wheels,(String) wheelName);
-                    loadOptions(CurrentWheel);
-                    updateTitle(CurrentWheel);
-                    // Do something with the found wheel
-                    Toast.makeText(MainActivity.this, "Found wheel: " + CurrentWheel.Name, Toast.LENGTH_SHORT).show();
+        return menuItem -> {
+            // Handle menu item click here
+            String wheelName = (String) menuItem.getTitle();
+            int wheelId = menuItem.getItemId();
 
-                } catch (Exception e) {
-                    // Handle the exception
-                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                    return true;
-                }
+            Toast.makeText(MainActivity.this, wheelName + " clicked", Toast.LENGTH_SHORT).show();
 
+            try {
+                CurrentWheel = wheelDB.getWheelById(wheelId);
+                loadOptions(CurrentWheel);
+                updateTitle(CurrentWheel);
+                // Do something with the found wheel
+                Toast.makeText(MainActivity.this, "Found wheel: " + CurrentWheel.Name, Toast.LENGTH_SHORT).show();
+
+                drawerLayout.closeDrawers();
                 return true;
+
+            } catch (Exception e) {
+                // Handle the exception
+                Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                return false;
             }
+
         };
     }
 
-
-    // Method to find a wheel by name
-    public Wheel findWheelByName(List<Wheel> wheels, String name) throws Exception {
-        // Filter wheels with the matching name
-        List<Wheel> matchingWheels = wheels.parallelStream()
-                .filter(wheel -> wheel.Name.equals(name))
-                .collect(Collectors.toList());
-
-        // Throw exception if no matching wheels or more than one matching wheel is found
-        if (matchingWheels.isEmpty()) {
-            throw new Exception("No wheel found with the name: " + name);
-        } else if (matchingWheels.size() > 1) {
-            throw new Exception("Multiple wheels found with the name: " + name);
-        }
-
-        // Return the single matching wheel
-        return matchingWheels.get(0);
+    private void addMenuSeparator(Menu menu) {
+        // Add a separator (divider) to the menu
+        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "").setEnabled(false);
     }
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -259,7 +248,6 @@ public class MainActivity extends AppCompatActivity {
             CurrentWheel.Options.add(option);
             wheelView.setOptions((List<String>) CurrentWheel.Options);
             optionInput.setText("");
-            saveOptions();
         }
     }
     private void clearEditTextFocus() {
@@ -270,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private void spinWheel() {
         clearEditTextFocus();
-        if (options.isEmpty()) {
+        if (CurrentWheel.Options.isEmpty()) {
             Toast.makeText(this, "Please add options before spinning", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -335,12 +323,6 @@ public class MainActivity extends AppCompatActivity {
         wheelView.setColorPalette(colorPalette);
     }
 
-    private void saveOptions() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putStringSet("wheel_options", new HashSet<>(options));
-        editor.apply();
-    }
-
     private void loadOptions() {
         Set<String> savedOptions = sharedPreferences.getStringSet("wheel_options", new HashSet<>());
         options = new ArrayList<>(savedOptions);
@@ -355,64 +337,96 @@ public class MainActivity extends AppCompatActivity {
         loadOptions(wheel);
         updateTitle(wheel);
     }
-    private void saveWheels(){
-        try {
-            if(Wheels.parallelStream().anyMatch(wheel -> wheel.Name.equals(CurrentWheel.Name)))
-            {
-                new AlertDialog.Builder(this)
-                        .setTitle("Same title found")
-                        .setMessage("Overwrite?")
-                        .setPositiveButton("OK", (dialog, which) -> {
-                            try {
-                                Wheel wheelToOverWrite = findWheelByName(Wheels,CurrentWheel.Name);
-                                wheelToOverWrite.Options = CurrentWheel.Options;
-                                CurrentWheel = wheelToOverWrite;
-                                wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                        .show();
-                return;
-            }
-            Wheels.add(CurrentWheel);
-            wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
+    private void saveWheels() throws JSONException {
+        // Update title
+        CurrentWheel.Name=titleBar.getText().toString();
+        titleBar.clearFocus();
 
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
+        List<Wheel> wheels = wheelDB.getWheels();
+        if(!wheels.contains(CurrentWheel))
+            {
+                WheelDBResult result = wheelDB.AddWheel(CurrentWheel);
+                if (result == WheelDBResult.ERROR)
+                    throw new RuntimeException("Failed to add wheel to DB");
+            }
+        wheelSerializer.SaveWheelsToSharedPreferences(wheels, sharedPreferences);
+
+        // Update menu view
+        prepareWheelMenu();
+
+        Toast.makeText(MainActivity.this,"Wheels saved",Toast.LENGTH_SHORT).show();
     }
 
-    private void FakeWheels() {
+    private void FakeWheels() throws JSONException {
         List<String> fakeoptions =  Arrays.asList("a","b","c");
         List<String> fakeoptions2 =  Arrays.asList("aa","ba","ca");
-        Wheel wheel = new Wheel("Hello",fakeoptions);
-        Wheels.add(wheel);
-        Wheel wheel2 = new Wheel("ni",fakeoptions2);
-        Wheels.add(wheel2);
-        String json=wheel.Serialize();
+        wheelDB.AddWheelWithNewId("Hi",fakeoptions);
+        wheelDB.AddWheelWithNewId("No",fakeoptions2);
+
+        String json=wheelSerializer.SerializeWheels(wheelDB.getWheels());
     }
 
     private void loadWheels() throws JSONException {
-        List<Wheel> loadedWheels=new ArrayList<>();
-        loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
+        List<Wheel> loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
+        wheelDB.setWheels(loadedWheels);
+        List<Wheel> wheels=wheelDB.getWheels();
+        if(wheels.isEmpty())
+        {
+            wheelDB.AddWheelWithNewId("Example", Arrays.asList("a","b","c"));
+        }
+        CurrentWheel=wheels.get(0);
+        updateWheel(CurrentWheel);
     }
 
     private void addWheel() {
         CurrentWheel=new Wheel();
         updateWheel(CurrentWheel);
+        AskForWheelName();
+    }
+    private void AskForWheelName(){
+        // Create an EditText for the dialog input
+        final EditText input = new EditText(MainActivity.this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        // Create a dialog builder
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Enter Wheel title");
+        builder.setView(input);
+
+        // Set up the buttons
+        builder.setPositiveButton(android.R.string.ok, (dialog, which) -> {
+            dialog.dismiss();
+            String title = input.getText().toString();
+            handleTitleInput(title);  // Call a method to handle the input
+        });
+        builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
+
+        // Show the dialog
+        builder.show();
+    }
+    // Method to handle the name input
+    private void handleTitleInput(String title) {
+        // Example handling: Show a toast with the entered name
+        Toast.makeText(this, "Title entered: " + title, Toast.LENGTH_SHORT).show();
+        if(CurrentWheel == null)
+            throw new RuntimeException("Current wheel is null, while setting title");
+        CurrentWheel.Name = title;
+        updateTitle(CurrentWheel);
     }
 
     private void deleteWheel() {
-        if(Wheels.contains(CurrentWheel)) {
-            Wheels.remove(CurrentWheel);
 
-            try {
-                wheelSerializer.SaveWheelsToSharedPreferences(Wheels, sharedPreferences);
-            } catch (JSONException e) {
-                throw new RuntimeException(e);
-            }
+        wheelDB.RemoveWheel(CurrentWheel);
+
+        try {
+            wheelSerializer.SaveWheelsToSharedPreferences(wheelDB.getWheels(), sharedPreferences);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
         }
+        // Todo think of a way of handling when no wheel is selected.
         addWheel();
+
+        // Update menu view
+        prepareWheelMenu();
     }
 }

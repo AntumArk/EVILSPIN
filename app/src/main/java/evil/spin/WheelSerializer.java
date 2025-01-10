@@ -70,7 +70,7 @@ public class WheelSerializer implements IWheelSerializer {
         if (wheelJson.isEmpty()) throw new JSONException("Empty Json");
 
         JSONObject jsonObject = new JSONObject(wheelJson);
-        long id = jsonObject.getLong("Id");
+        int id = jsonObject.getInt("Id");
         String name = jsonObject.getString("Name");
 
         JSONArray optionsArray = jsonObject.getJSONArray("Options");

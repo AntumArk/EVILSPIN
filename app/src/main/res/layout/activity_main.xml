@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/screen_red">
-            <TextView
+            <EditText
                 android:id="@+id/titlebar"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
@@ -23,6 +23,7 @@
                 android:gravity="center"
                 android:padding="10dp"
                 android:text="Title"
+                android:hint="Wheel Title"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
                 app:autoSizeMaxTextSize="30sp"
