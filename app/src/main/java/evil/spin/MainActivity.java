@@ -15,7 +15,6 @@ import android.view.MenuItem;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -147,7 +146,6 @@ public class MainActivity extends AppCompatActivity {
     private void prepareWheelMenu() {
         // Clean menu from previous wheels
         wheelMenu.clear();
-       // FakeWheels(); // TODO remove after testing
         // Create a separate method for the menu item click listener
         MenuItem.OnMenuItemClickListener menuItemClicked = createMenuItemClickListener();
         List<Wheel> wheels=wheelDB.getWheels();
@@ -351,15 +349,6 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this,"Wheels saved",Toast.LENGTH_SHORT).show();
     }
 
-    private void FakeWheels() throws JSONException {
-        List<String> fakeoptions =  Arrays.asList("a","b","c");
-        List<String> fakeoptions2 =  Arrays.asList("aa","ba","ca");
-        wheelDB.AddWheelWithNewId("Hi",fakeoptions);
-        wheelDB.AddWheelWithNewId("No",fakeoptions2);
-
-        String json=wheelSerializer.SerializeWheels(wheelDB.getWheels());
-    }
-
     private void loadWheels() throws JSONException {
         List<Wheel> loadedWheels = (List<Wheel>) wheelSerializer.LoadWheelsFromSharedPreferences(sharedPreferences);
         wheelDB.setWheels(loadedWheels);
@@ -417,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
-        // Todo think of a way of handling when no wheel is selected.
+        // Add new wheel as current wheel. This is how you ensure wheel is always present
         addWheel();
 
         // Update menu view
